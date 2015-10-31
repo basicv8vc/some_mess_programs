@@ -9,6 +9,8 @@ public class User {
 	private String password = null;
 	//cookie
 	private Cookie cookie = null;
+	//USERPOOL
+//	public static List<User> USERPOOL = new LinkedList<User>();
 	
 	/**
 	 * 
@@ -24,7 +26,7 @@ public class User {
 	}
 	
 	/**
-	 * 
+	 * Cookie is null
 	 * @param username
 	 * @param password
 	 */

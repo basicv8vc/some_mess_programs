@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-public class SessionCookie {
+public class Cookie {
 
 	//session id, long type
 	private long id;
@@ -14,11 +14,12 @@ public class SessionCookie {
 	//last user action time
 	private long userActionStartTime;
 
-	public SessionCookie(long id){
+	public Cookie(long id){
 		this.id = id;
+		this.userActionStartTime = System.currentTimeMillis(); 
 	}
 	
-	public SessionCookie(){
+	public Cookie(){
 		this.id = -1;
 	}
 	
@@ -29,7 +30,7 @@ public class SessionCookie {
 	 */
 	public long cookieIdentifier(){
 		Random rand = new Random();
-		id = rand.nextInt(10000); //怎么判断这个id 和以前的不冲突, 交给 ChatServer 
+		id = rand.nextInt(10000); 
 		
 		return id;
 		
@@ -45,9 +46,9 @@ public class SessionCookie {
 		boolean isTimeOut = false;
 		
 		long currentTime = System.currentTimeMillis();
-		int activeSeconds = (int)(currentTime - userActionStartTime) / 1000;
+		long activeSeconds = currentTime - userActionStartTime;
 		
-		if(activeSeconds > timeoutLength)
+		if(activeSeconds >= (timeoutLength*1000))
 			isTimeOut = true;
 		
 		return isTimeOut;
@@ -60,7 +61,6 @@ public class SessionCookie {
 	 */
 	public void updateTimeOfActivity(){
 		userActionStartTime = System.currentTimeMillis();
-		int i=0;
 	
 	}
 	
@@ -72,5 +72,9 @@ public class SessionCookie {
 		return id;
 	}
 
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
+
+	}
 
 }

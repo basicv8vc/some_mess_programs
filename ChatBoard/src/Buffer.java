@@ -1,7 +1,7 @@
 import java.util.LinkedList;
 import java.util.Queue;
 
-public class Buffer {
+public class CircularBuffer {
 	
 	//maximum number of messages
 	private final int maximumSize; 
@@ -10,12 +10,11 @@ public class Buffer {
 	private Queue<String> buffer = new LinkedList<String>();
 
 	
-	
 	/**
 	 * 
 	 * @param size ,accepts the maximum number of messages that this buffer can hold
 	 */
-	public Buffer(int size){
+	public CircularBuffer(int size){
 		this.maximumSize = size;
 		this.messageIndex = 0;
 		
@@ -27,7 +26,7 @@ public class Buffer {
 	 */
 	public void put(String message){
 		String formatMessage = String.format("%04d", messageIndex);
-		formatMessage += ")";
+		formatMessage += ") "; //nedd ") " here???
 		formatMessage += message;
 		
 		if(buffer.size() < maximumSize)
@@ -50,7 +49,7 @@ public class Buffer {
 	 */
 	public String[] getNewest(int numMessages){
 		if(numMessages < 0)
-			return null;
+			return null; //here need to check ？
 		else{
 			int bufferSize = buffer.size();
 			if(numMessages > bufferSize)
@@ -72,7 +71,7 @@ public class Buffer {
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 
-		Buffer cb = new Buffer(5);
+		CircularBuffer cb = new CircularBuffer(5);
 		for(int i=0;i<7;i++)
 			cb.put(String.valueOf(i));
 		for(String str:cb.buffer)

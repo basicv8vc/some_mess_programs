@@ -1,19 +1,20 @@
 import java.util.*;
 
-
-public class CharBoard {
+public class ChatBoard {
 	
 	private List<User> users;
 	private int maxMessages;
-	
-	public CharBoard(User[] users, int maxMessages) {
+	private Buffer cbuffer;
+	public ChatServer(User[] users, int maxMessages) {
 		// TODO Complete the constructor
+		this.users = new LinkedList<User>();
 		User rootuser = new User("root", "cs180");
 		this.users.add(rootuser);
-		this.users = new LinkedList<User>();
+
 		for(User user: users)
 			this.users.add(user);
 		this.maxMessages = maxMessages;
+		this.cbuffer = new Buffer(this.maxMessages);
 		
 	}
 
@@ -93,118 +94,128 @@ public class CharBoard {
 	 */
 	public String parseRequest(String request) {
 		// TODO: Replace the following code with the actual code
-		//怎么区分10和11
-		//10: 格式错误, 包括不用\r\n结尾，以及用错tab位置，位置不能在命令前和\t\r\n， tab个数用错属于参数个数错误吧？
 		String result;
-		if(request.endsWith("\r\n")==false)
-			result = MessageFactory.makeErrorMessage(10, "Format Command Error: dosen't ends with \r\n");
+		if(request.endsWith("\r\n") == false)
+			return  MessageFactory.makeErrorMessage(10);//
 		else{
-			String[] attributes = request.split("\t"); //ADD-USERPar1Par2Par3 这种也归于 11了
+			String[] attributes = request.split("\t"); 
 			if(attributes[0].contentEquals("ADD-USER")){
 				if(attributes.length != 4)
-					result = MessageFactory.makeErrorMessage(10, "Format Command Error: Miss \t");
+					 return MessageFactory.makeErrorMessage(10);//, "Format Command Error: Miss \t");
 				else{
-					//verify user's login session through his cookie, 添加用户只能是(logged in to the server's)老用户
-					//由cookie ID怎么得到对应的cookie? 看来只能通过 IDPOOL ?
+					//verify user's login session through his cookie
 					try{
-						long id = Integer.valueOf(attributes[1]); //先判断第一个参数
-						int i = 0;
-						for(;i<SessionCookie.COOKIEPOOL.size();i++){
-							if(id == SessionCookie.COOKIEPOOL.get(i).getID()){
-								boolean isTimeOut = SessionCookie.COOKIEPOOL.get(i).hasTimeOut();
-								if(isTimeOut)
-									result = MessageFactory.makeErrorMessage(05, "Cookie Timeout Error: ");
-								break;
-							}//fi
-							
+						long id = Integer.valueOf(attributes[1]);
+						
+						boolean isCookieIDCorrect = false;
+						for(User user: users){
+							if(user.getCookie() != null){
+								if(user.getCookie().getID() == id){
+									isCookieIDCorrect = true;
+//									username = user.getName();
+									if(user.getCookie().hasTimeOut()){
+										user.setCookie(null);
+										return MessageFactory.makeErrorMessage(05, "Cookie Timeout Error");
+									}
+								}
+							}
 						}
-						if(i == SessionCookie.COOKIEPOOL.size()){//给的cookie id是错的, 根本不存在
-							result = MessageFactory.makeErrorMessage(24, "Invalid Value Error: the cookie ID is invalid!");
-							
-						}
+						
+						if(isCookieIDCorrect == false)
+							return MessageFactory.makeErrorMessage(23);//, "Invalid Value Error: the cookie ID is invalid!");
 						
 						//调用 add-user method
 						attributes[3] = attributes[3].replaceAll("\r\n", "");
-						result = addUser(attributes);
+						return addUser(attributes);
 						
-					}catch (Exception e){// cookie is null, 这里参数是cookie id，怎么判断是不是null?
-						result = MessageFactory.makeErrorMessage(23, "Login Error: The specified user has not logged in, so it's not to add other user");
+					}catch (Exception e){// cookie is null,
+						return MessageFactory.makeErrorMessage(23, "Login Error: The specified user has not logged in, so it's not to add other user");
 					}
 					
 				}
 				
 			}else if (attributes[0].contentEquals("USER-LOGIN")){
 				if(attributes.length != 3)
-					result = MessageFactory.makeErrorMessage(10, "Format Command Error: Miss \t");
+					return MessageFactory.makeErrorMessage(10);//
 				else{
-					//调用 user-login
+					attributes[2] = attributes[2].replaceAll("\r\n", "");
+					return userLogin(attributes); //
 				}
 				
 			}else if(attributes[0].contentEquals("POST-MESSAGE")){
 				if(attributes.length != 3)
-					result = MessageFactory.makeErrorMessage(10, "Format Command Error: Miss \t");
+					return MessageFactory.makeErrorMessage(10);//, "Format Command Error: Miss \t");
 				else{
 					//verify user's login session through his cookie, post
-					//由cookie ID怎么得到对应的cookie? 看来只能通过 IDPOOL ?
 					try{
 						long id = Integer.valueOf(attributes[1]);
-						int i = 0;
-						for(;i<SessionCookie.COOKIEPOOL.size();i++){
-							if(id == SessionCookie.COOKIEPOOL.get(i).getID()){
-								boolean isTimeOut = SessionCookie.COOKIEPOOL.get(i).hasTimeOut();
-								if(isTimeOut)
-									result = MessageFactory.makeErrorMessage(05, "Cookie Timeout Error: ");
-								break;
-							}//fi
-							
+						boolean isCookieIDCorrect = false;
+						String username = null;
+						for(User user: users){
+							if(user.getCookie() != null){
+								if(user.getCookie().getID() == id){
+									isCookieIDCorrect = true;
+									username = user.getName();
+									if(user.getCookie().hasTimeOut()){
+										user.setCookie(null);
+										return MessageFactory.makeErrorMessage(05, "Cookie Timeout Error");
+									}
+								}
+							}
 						}
-						if(i == SessionCookie.COOKIEPOOL.size()){//给的cookie id是错的, 根本不存在
-							result = MessageFactory.makeErrorMessage(24, "Invalid Value Error: the cookie ID is invalid!");
-							
-						}
+						if(isCookieIDCorrect == false)
+							return MessageFactory.makeErrorMessage(23);//, "Invalid Value Error: the cookie ID is invalid!");
 						
-						//调用 post 
+
+						attributes[2] = attributes[2].replaceAll("\r\n", "");
+						return postMessage(attributes, username); //调用 post
 						
-					}catch (Exception e){// cookie is null, 这里参数是cookie id，怎么判断是不是null?
-						result = MessageFactory.makeErrorMessage(23, "Login Error: The specified user has not logged in, so it's not to add other user");
+
+					}catch (Exception e){// cookie is null
+						return MessageFactory.makeErrorMessage(23, "Login Error: The specified user has not logged in, so it's not to add other user");
 					}
 					
 				}
 				
 			
 			
-			}else if(attributes[0].contentEquals("GET-MESSAGE")){
+			}else if(attributes[0].contentEquals("GET-MESSAGES")){
 				if(attributes.length != 3)
-					result = MessageFactory.makeErrorMessage(10, "Format Command Error: Miss \t");
+					return MessageFactory.makeErrorMessage(10);//, "Format Command Error: Miss \t");
 				else{
-					//verify user's login session through his cookie, post
-					//由cookie ID怎么得到对应的cookie? 看来只能通过 IDPOOL ?
 					try{
 						long id = Integer.valueOf(attributes[1]);
-						int i = 0;
-						for(;i<SessionCookie.COOKIEPOOL.size();i++){
-							if(id == SessionCookie.COOKIEPOOL.get(i).getID()){
-								boolean isTimeOut = SessionCookie.COOKIEPOOL.get(i).hasTimeOut();
-								if(isTimeOut)
-									result = MessageFactory.makeErrorMessage(05, "Cookie Timeout Error: ");
-								break;
-							}//fi
-							
+						boolean isCookieIDCorrect = false;
+						String username = null;
+						for(User user: users){
+							if(user.getCookie() != null){
+								if(user.getCookie().getID() == id){
+									isCookieIDCorrect = true;
+									username = user.getName();
+									if(user.getCookie().hasTimeOut()){
+										user.setCookie(null);
+										return MessageFactory.makeErrorMessage(05, "Cookie Timeout Error");
+									}
+								}
+							}
 						}
-						if(i == SessionCookie.COOKIEPOOL.size()){//给的cookie id是错的, 根本不存在
-							result = MessageFactory.makeErrorMessage(24, "Invalid Value Error: the cookie ID is invalid!");
-							
-						}
+						if(isCookieIDCorrect == false)
+							return MessageFactory.makeErrorMessage(23);//, "Invalid Value Error: the cookie ID is invalid!");
 						
-						//调用 get
-						
-					}catch (Exception e){// cookie is null, 这里参数是cookie id，怎么判断是不是null?
-						result = MessageFactory.makeErrorMessage(23, "Login Error: The specified user has not logged in, so it's not to add other user");
+						attributes[2] = attributes[2].replaceAll("\r\n", "");
+						return getMessages(attributes); //调用 get
+
+					}catch (Exception e){// cookie is null
+						return MessageFactory.makeErrorMessage(23, "Login Error: The specified user has not logged in, so it's not to add other user");
 					}
 					
 				}
 			}else{
-				result = MessageFactory.makeErrorMessage(11, "Unknown Command Error: The specified client command doesn't exist");
+				if(attributes.length == 1){ //don't contain \t
+					return MessageFactory.makeErrorMessage(10);
+					
+				}
+				return MessageFactory.makeErrorMessage(11, "Unknown Command Error: The specified client command doesn't exist");
 			
 				
 			}
@@ -214,7 +225,7 @@ public class CharBoard {
 		}
 			
 		
-		return result;
+//		return result;
 	}
 	
 	/**
@@ -248,7 +259,7 @@ public class CharBoard {
 		for(int i=0;i<users.size();i++){
 			if(users.get(i).getCookie() != null){
 				if(users.get(i).getCookie().getID() == Integer.valueOf(args[1])){
-					users.get(i).getCookie().updateTimeOfActivity(); // update sessioncookie 指的就是仅仅update time吧？不需要改变session id吧？
+					users.get(i).getCookie().updateTimeOfActivity(); // update Cookie 指的就是仅仅update time吧？不需要改变session id吧？
 //					System.out.println();
 					break;
 					
@@ -280,7 +291,101 @@ public class CharBoard {
 	 * @return
 	 */
 	public String userLogin(String[] args){
+		//command,username,password
+		String results = null;
+		boolean isAlreadyCreated = false;
+		boolean isPasswordCorrect = false;
+		User thisuser = null;
+		for(User user:users){
+			if(user.getName().contentEquals(args[1])){
+				isAlreadyCreated = true;
+				if(user.checkPassword(args[2])){
+					isPasswordCorrect = true;
+					thisuser = user; //reference////////////////////////////////////////////////////////////////
+				}
+				break;
+			}
+		}
+		if(!isAlreadyCreated)
+			return MessageFactory.makeErrorMessage(20, "Username Lookup Error: The specified user doesnot not exist");
+		if(isAlreadyCreated && (!isPasswordCorrect))
+			return MessageFactory.makeErrorMessage(21, "The given password is not correct for the specified user");
 		
+		//check is the given user already be authenticated(the Cookie associated should be null)
+		if(thisuser.getCookie() != null)
+			return MessageFactory.makeErrorMessage(25, "The specified user is already logged in the server"); //看来如果timeout, Cookie要设置为null
 		
+		Cookie newcookie = new Cookie();
+		while(true){
+			long newid = newcookie.cookieIdentifier();
+			boolean isIDAlreadyExist = false;
+			for(User user:users){
+				if(user.getCookie() != null){
+					if(user.getCookie().getID() == newid){
+						isIDAlreadyExist = true;
+						break;
+					}
+				}
+			}//for
+			if(!isIDAlreadyExist){
+				results = String.valueOf(newid);
+				break;
+			}
+		}
+		newcookie.updateTimeOfActivity();
+		thisuser.setCookie(newcookie);
+//		System.out.println("SUCCESS\t" + results + "\r\n");
+		return "SUCCESS\t" + results + "\r\n";
+		
+	}
+	
+	
+	/**
+	 * 
+	 * @param args
+	 * @param name
+	 * @return
+	 */
+	public String postMessage(String[] args, String name){
+		//command, cookieID,message
+		args[2] = args[2].trim(); //remove white space head and tail
+		if(args[2].length() < 1)
+			return MessageFactory.makeErrorMessage(24, "PostMessage should at least contain 1 chars");
+		String newmessage = name + ": " + args[2];
+		cbuffer.put(newmessage); //add message to the board
+		
+		//update old user's session cookie
+		for(int i=0;i<users.size();i++){
+			if(users.get(i).getName().contentEquals(name)){
+					users.get(i).getCookie().updateTimeOfActivity(); // update Cookie
+					break;
+				
+			}
+			
+		}
+		return "SUCCESS\r\n";
+	}
+	
+	
+	public String getMessages(String[] args){
+		//command, cookie ID, numMessages
+		//should not update user's session cookie   
+		int numMessages = Integer.valueOf(args[2]);
+		if(numMessages < 1)
+			return MessageFactory.makeErrorMessage(24, "Error: numMessage < 1");
+		
+		String[] results = cbuffer.getNewest(numMessages);
+		if(results.length == 0)
+			return "SUCCESS\r\n";
+		else{
+			String line = "SUCCESS";
+			for(String message: results){
+				line += "\t";
+				line += message;
+			}
+			line += "\r\n";
+			return line;
+			
+		}
 	}
 }
