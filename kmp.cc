@@ -37,23 +37,19 @@ int strStr(const string &haystack, const string &needle) {
 		cout << next[i] << ' ';
 	cout << endl;
 	
-	for (unsigned i = 0,k=0; i < haystack.size();) {
-		while (haystack[i + k] == needle[k]) {
+	for (unsigned i = 0,k=0; i < hsize;) {
+		while (haystack[i] == needle[k]) {
 			++k;
-			if (k == needle.size())
-				return i;
-		}
-
-		//i += k;//长串不动，只需要子串右移,
-
-		if(k>0){
-			i += k;
-			//k -= next[k - 1];
-			k = next[k - 1];//长串不动，所以下标i+=k,而子串右移k-next[k-1]位，所以k=k-(k-next[k-1]),即 k=next[k-1];
-		}
-		else{
 			++i;
-
+			if (k == nsize)
+				return i-k;
+		}
+		//右移子串
+		if (k == 0)
+			++i;
+		else {
+			int rmove = k - next[k - 1];
+			k -= rmove;
 		}
 
 	}
