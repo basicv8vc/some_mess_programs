@@ -23,9 +23,9 @@ private:
 	struct Node {
 		T value;
 		Color color;
-		Node<T> *parent, *leftTree, *rightTree; //Èı¸öÖ¸Õë£¬·Ö±ğÖ¸Ïò¸¸½Úµã£¬×óÓÒ¶ù×Ó
+		Node<T> *parent, *leftTree, *rightTree; //ä¸‰ä¸ªæŒ‡é’ˆï¼Œåˆ†åˆ«æŒ‡å‘çˆ¶èŠ‚ç‚¹ï¼Œå·¦å³å„¿å­
 
-		Node() 
+		Node()
 		{
 			color = red;
 			parent = leftTree = rightTree = NULL;
@@ -34,7 +34,7 @@ private:
 
 		Node* grandparent()
 		{
-			if (parent != NULL)////Á½¸öÎÊÌâ£ºÆäÊµÒ²¾ÍrootµÄparent==NULL? rootµÄº¢×ÓÓĞgrandparents£¿
+			if (parent != NULL)////ä¸¤ä¸ªé—®é¢˜ï¼šå…¶å®ä¹Ÿå°±rootçš„parent==NULL? rootçš„å­©å­æœ‰grandparentsï¼Ÿ
 				return parent->parent;
 			return NULL;
 		}
@@ -47,11 +47,11 @@ private:
 				return grandparent()->rightTree;
 			else
 				return grandparent()->leftTree;
-				
+
 		}
 
 		Node* sibling()
-		//·µ»Ø×Ô¼ºµÄĞÖµÜ½ãÃÃ,±ØĞëÓĞĞÖµÜ£¬Âú¶ş²æÊ÷
+		//è¿”å›è‡ªå·±çš„å…„å¼Ÿå§å¦¹,å¿…é¡»æœ‰å…„å¼Ÿï¼Œæ»¡äºŒå‰æ ‘
 		{
 			if (this == parent->leftTree)
 				return parent->rightTree;
@@ -63,58 +63,163 @@ private:
 
 
 	};
-	
-	void insertCheck(Node *p)
-	//pµãÓÉºÚÉ«±äºìÉ«£¬ÊÇ·ñ³åÍ»
+
+	void colorCheck(Node *p)
+	//æ’å…¥ä¸€ä¸ªNodeï¼Œçº¢è‰²ï¼Œçœ‹çœ‹æ˜¯ä¸æ˜¯è¦è°ƒæ•´RedBlackTreeç»“æ„
 	{
-		if (p->parent == NULL)//pÊÇroot,Ö»Ğèºì±äºÚÀ²
-			p->color = black;
-
-		else if (p->grandparent()==NULL)//pÊÇrootµÄËï×Ó£¬
+		//ä¸¤ä¸ªè¾¹ç•Œæƒ…å†µï¼špæ˜¯root pæ˜¯rootå„¿å­
+		if (p->parent == NULL)
 		{
-
-
+			p->color = black;
+			return;
 		}
+		if (p->grandparent() == NULL)
+		{
+			return;
+		}
+
+		//çœ‹pçš„çˆ¶èŠ‚ç‚¹ï¼Œå¦‚æœæ˜¯é»‘è‰²ï¼Œä¸ç”¨æ“ä½œï¼Œå¦‚æœæ˜¯çº¢è‰²ï¼Œçœ‹å”å”
+		if (p->parent->color == red)
+		{
+			//çœ‹å”å”
+			if (p->uncle()->color == red)//çˆ¶è¾ˆå’Œç¥–çˆ¶æ¢é¢œè‰²ï¼Œç„¶åå¯¹ç¥–çˆ¶colorCheck()
+			{
+				p->parent->color = black;
+				p->uncle()->color = black;
+				p->grandparent()->color = red;
+
+				colorCheck(p->grandparent());
+			}
+			else //å”å”æ˜¯é»‘è‰²ï¼Œæ—‹è½¬å§å°æ‘©æ‰˜
+			{
+				//ä¸€å…±å››ç§æƒ…å†µ:å·¦å·¦ï¼Œå³å³ï¼Œå·¦å³ï¼Œå³å·¦.ä»ç¥–çˆ¶-çˆ¶èŠ‚ç‚¹-p çš„æ’åºæ–¹å¼åˆ†ä¸ºè¿™å››ç§æƒ…å†µ,
+				if ((p->parent == p->grandparent()->leftTree) &&
+					(p==p->parent->leftTree)                )//å·¦å·¦
+				{
+					//åªéœ€è¦å³æ—‹è½¬ä¸€æ¬¡,ä»¥p->grandparent()ä¸ºroot
+					leftRotation(p->grandparent());
+
+				}
+				else if ((p->parent == p->grandparent()->leftTree) &&
+					(p == p->parent->rightTree))//å·¦å³
+				{
+					//æ—‹è½¬ä¸¤æ¬¡ï¼Œå…ˆä»¥p->parentä¸ºrootå·¦æ—‹ï¼Œå†ä»¥p->grandparent()ä¸ºrootï¼Œå³æ—‹
+					leftRotation(p->parent);
+					rightRotation(p->grandparent());
+				}
+				else if ((p->parent == p->grandparent()->rightTree) &&
+					(p == p->parent->rightTree))//å³å³
+				{
+					//åªéœ€è¦ä¸€æ¬¡å·¦æ—‹ï¼Œä»¥p->grandparent()ä¸ºroot
+					leftRotation(p->grandparent());
+				}
+				else
+				{
+					//æ—‹è½¬ä¸¤æ¬¡ï¼Œå…ˆä»¥p->parentä¸ºrootå³æ—‹ï¼Œå†ä»¥p->grandparent()ä¸ºrootï¼Œå·¦æ—‹
+					rightRotation(p->parent);
+					leftRotation(p->grandparent());
+				}
+
+			}
+		}
+
+
+
 	}
 
+	void leftRotation(Node *p)
+	//å·¦æ—‹è½¬,ä»¥pä¸ºroot, æœ€å¤šå…±éœ€è®¾ç½®6ä¸ªæŒ‡é’ˆï¼ˆpå¯èƒ½æ˜¯rootï¼Œæœ‰çš„å¯èƒ½æ˜¯NIL,æœ€å°‘4ä¸ªæŒ‡é’ˆè®¾ç½®ï¼‰,
+	//è¿™å…­ä¸ªæŒ‡é’ˆ(ä¸‰ç»„) çš„è®¾ç½®é¡ºåºå†çœ‹çœ‹
+	{
+
+		//å…ˆçœ‹pæ˜¯ä¸æ˜¯root,è¿™æ¶‰åŠåˆ°p->parentçš„å˜åŒ–ï¼Œå¦‚æœpæ˜¯root,å°±ä¸ç”¨ç®¡p->parent
+		if (p->parent != NULL)
+		{
+			//åˆ¤æ–­pæ˜¯çˆ¶èŠ‚ç‚¹çš„å·¦å­©å­è¿˜æ˜¯å³å­©å­, è®¾ç½®på³å­©å­çš„çˆ¶èŠ‚ç‚¹
+			if (p == p->parent->leftTree)
+			{
+				p->rightTree->parent = p->parent;
+				p->parent->leftTree = p->rightTree;
+			}
+			else
+			{
+				p->rightTree->parent = p->parent;
+				p->parent->rightTree = p->rightTree;
+			}
+
+		}
+		else
+		{
+			p->rightTree->parent = NULL;
+		}
+
+		p->parent = p->rightTree;//è®¾ç½®pçš„çˆ¶èŠ‚ç‚¹
+
+		if (p->rightTree->leftTree != NIL)
+		{
+			p->rightTree->leftTree->parent = p;
+			p->rightTree = p->parent->leftTree;
+
+		}
+		else
+		{
+			p->rightTree = p->parent->leftTree;
+		}
+
+
+		p->parent->leftTree = p;
+
+
+	}
+
+	void rightRotation(Node *p)
+	//å³æ—‹è½¬å’Œå·¦æ—‹è½¬ï¼Œå†™å‡ºä¸€ä¸ªï¼Œå¦ä¸€ä¸ªå°±å‡ºæ¥äº†ï¼Œ
+	{
+		if (p->parent != NULL)
+		{
+			//åˆ¤æ–­pæ˜¯çˆ¶èŠ‚ç‚¹çš„å·¦å­©å­è¿˜æ˜¯å³å­©å­
+			if (p == p->parent->leftTree)
+			{
+				p->leftTree->parent = p->parent;
+				p->parent->leftTree = p->leftTree;
+			}
+			else
+			{
+				p->leftTree->parent = p->parent;
+				p->parent->rightTree = p->leftTree;
+			}
+		}
+		else
+		{
+			p->leftTree->parent = NULL;
+		}
+		p->parent = p->leftTree;
+		if (p->leftTree->rightTree != NIL)
+		{
+			p->leftTree->rightTree->parent = p;
+			p->leftTree = p->parent->rightTree;
+		}
+		else
+		{
+			p->leftTree = p->parent->rightTree;
+		}
+		p->parent->rightTree = p;
+
+
+	}
 	void insert(Node *p, T x)
 	//find the place, then insert x
 	{
-		if (p->value >= x)//pµÄvalue>=x,½«x¿Ï¶¨²åÈëµ½p×ó±ß
+		if (p->value >= x)//pçš„value>=x,å°†xæ’å…¥åˆ°på·¦è¾¹
 		{
-			if (p->leftTree == NIL)
+			if (p->leftTree == NIL)//æ‰¾åˆ°xçš„ä½ç½®ï¼Œæ’å…¥
 			{
 				Node* tmp = new Node();
 				tmp->value = x;
 				tmp->parent = p;
 				tmp->leftTree = tmp->rightTree = NIL;
-				p->leftTree = tmp;//ĞÂµÄ¶ù×Ó
-				//¿´parentµÄÑÕÉ«,Èç¹ûÊÇºÚÉ«£¬Ôòend£¬·ñÔò¿´ÊåÊåµÄÑÕÉ«
-				if (tmp->parent->color = red)//tmp->parent==p£»×¢ÒârootÔÚ²åÈëÊ±¿ÉÄÜ¾­Àú×æÊå»»É«£¬³ÉÎªºìÉ«£¬È»ºóinsertCheck() »á¾ÀÕıµÄ£¬ËùÒÔÕâÀïroot²»»áÊÇºìÉ«,¶øpÊÇºìÉ«£¬ËµÃ÷²»ÊÇroot£¬tmp±ØÓĞgrandparents,
-
-				{
-					
-					if (tmp->uncle()->color == red)//Ê×ÏÈÓÉÊåÊå£¬ÇÒÊåÊåÊÇºìÉ«,Ä¬ÈÏÓĞ×æ¸¸
-					{
-						//¸¸Ç×¡¢ÊåÊåºÍ×æ¸¸»»ÑÕÉ«
-						tmp->parent->color = black;
-						tmp->uncle()->color = black;
-						tmp->grandparent()->color = red;
-
-						//¶Ô×æ¸¸½øĞĞºìºì¼ì²é
-						insertCheck(tmp->grandparent());//insertCheck×öµÄÊÂÊÇ£ºµãÒÑ¾­²åÈëµ½ÊıÀï£¬µ«ÊÇÑÕÉ«ÓĞ¿ÉÄÜÓĞÎÊÌâ,
-
-
-					}
-					else //Ê×ÏÈÓĞÊåÊå£¬ÇÒÊåÊåÊÇºÚÉ«£¬Ä¬ÈÏÓĞ×æ¸¸, Ğı×ª²Ù×÷
-					{
-
-
-					}
-					
-
-				}
-				//Èç¹ûparent ÊÇºÚÉ«£¬½áÊø²åÈë
+				p->leftTree = tmp;//æ–°çš„å„¿å­
+				colorCheck(tmp);
 
 			}
 			else //p->leftTree !=NIL
@@ -124,7 +229,7 @@ private:
 			}
 
 		}
-		else //p->value < x,½«x²åÈëµ½pÓÒ±ß
+		else //p->value < x,å°†xæ’å…¥åˆ°på³è¾¹
 		{
 			if (p->rightTree == NIL)
 			{
@@ -132,41 +237,15 @@ private:
 				tmp->value = x;
 				tmp->parent = p;
 				tmp->leftTree = tmp->rightTree = NIL;
-				p->rightTree = tmp;//ĞÂµÄ¶ù×Ó
-
-				if (tmp->parent->color == red)
-				{
-					if (tmp->uncle()->color == red)//Ê×ÏÈÓÉÊåÊå£¬ÇÒÊåÊåÊÇºìÉ«,Ä¬ÈÏÓĞ×æ¸¸
-					{
-						//¸¸Ç×¡¢ÊåÊåºÍ×æ¸¸»»ÑÕÉ«
-						tmp->parent->color = black;
-						tmp->uncle()->color = black;
-						tmp->grandparent()->color = red;
-
-						//¶Ô×æ¸¸½øĞĞºìºì¼ì²é
-						insertCheck(tmp->grandparent());
-
-
-					}
-					else //Ê×ÏÈÓĞÊåÊå£¬ÇÒÊåÊåÊÇºÚÉ«£¬Ä¬ÈÏÓĞ×æ¸¸, Ğı×ª²Ù×÷
-					{
-
-
-					}
-
-
-				}
-				//Èç¹ûparent ÊÇºÚÉ«£¬½áÊø²åÈë
+				p->rightTree = tmp;//æ–°çš„å„¿å­
+				colorCheck(tmp);
 			}
 			else //p->rightTree !=NIL
 			{
 				insert(p->rightTree, x);
 
 			}
-
-
 		}
-	}
 
 
 	}
@@ -174,24 +253,24 @@ private:
 
 public:
 	RedBlackTree()
-	//Ò»¿Å¿ÕÊ÷
+	//ä¸€é¢—ç©ºæ ‘
 	{
 		NIL = new Node();
-		NIL->color = black;//NILÊÇºÚÉ«½Úµã,²»ÓÃ¹Üvalue
-		root = NULL;//Ã¿¸ö±äÁ¿¶¼³õÊ¼»¯,
+		NIL->color = black;//NILæ˜¯é»‘è‰²èŠ‚ç‚¹,ä¸ç”¨ç®¡value
+		root = NULL;//æ¯ä¸ªå˜é‡éƒ½åˆå§‹åŒ–,
 
 	}
 
 	void insert(T x)
-	//²åÈëxÖµ
+	//æ’å…¥xå€¼
 	{
-		//ÅĞ¶ÏÊÇ²»ÊÇ¿ÕÊ÷,
+		//åˆ¤æ–­æ˜¯ä¸æ˜¯ç©ºæ ‘,
 		if (root == NULL)
 		{
 			root = new Node();
 			root->color = black;
 			root->value = x;
-			root->leftTree = root->rightTree = NIL;//rootµÄparentÊÇNULL,
+			root->leftTree = root->rightTree = NIL;//rootçš„parentæ˜¯NULL,
 
 		}
 		else
