@@ -48,3 +48,31 @@ public:
 	    return a.value < b.value;
     }
 };
+
+
+
+//很简单的思想，使用unordered_map 17ms, 使用map 24ms,
+
+class Solution {
+public:
+    vector<int> twoSum(vector<int>& nums, int target) {
+    
+	unsigned size = nums.size();
+	unordered_map<int, int> imap;
+	
+	vector<int> result;
+	for (unsigned i = 0; i < size; ++i)
+	{
+		if (imap.find(target - nums[i]) != imap.end())
+		{
+			result.push_back(imap[target - nums[i]]);
+			result.push_back(i);
+			return result;
+		}
+		imap[nums[i]] = i;
+	}
+    }
+
+};
+
+
