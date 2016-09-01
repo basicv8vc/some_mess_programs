@@ -11,6 +11,11 @@ class A {
 	public static void printB() {
 		System.out.println(b);
 	}
+	
+	public void nonStaticMethod() {
+		System.out.println("Base Class nonStaticMethod()");
+		
+	}
 
 }
 
@@ -25,6 +30,10 @@ class B extends A {
 	public  void printB(int a) {
 		System.out.println(b);
 	}
+	
+	public void nonStaticMethod() {
+		System.out.println("Children Class nonStaticMethod()");
+	}
 }
 
 public class TestStatic {
@@ -37,6 +46,7 @@ public class TestStatic {
 		A a  = new B();
 		a.printB(); // 2
 		a.printA(); // 1
+		a.nonStaticMethod();
 		
 	}
 }
@@ -49,7 +59,9 @@ public class TestStatic {
 因为子类的静态变量与静态方法会隐藏父类的静态方法和变量。
 
 
-
+The only difference with inherited static (class) methods and inherited non-static (instance) methods 
+is that when you write a new static method with the same signature, 
+the old static method is just hidden, not overridden.
 
 
 
