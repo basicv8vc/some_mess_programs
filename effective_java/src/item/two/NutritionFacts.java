@@ -1,4 +1,4 @@
-package item.two;
+package item.two.first;
 
 /**
  *  重叠构造器(telescoping constructor)模式
