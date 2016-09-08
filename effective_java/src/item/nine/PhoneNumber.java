@@ -1,6 +1,6 @@
 package item.nine;
 
-public final class PhoneNumber {
+public final class PhoneNumber implements Comparable<PhoneNumber> {
 	private short areaCode;
 	private short prefix;
 	private short lineNumber;
@@ -53,6 +53,19 @@ public final class PhoneNumber {
 		return String.format("(%03d) %03d-%04d", areaCode, prefix, lineNumber);
 	}
 	
+	public int compareTo(PhoneNumber pn) {
+		int areaCodeDiff = areaCode - pn.areaCode;
+		if (areaCodeDiff != 0)
+			return areaCodeDiff;
+		
+		// area Code are equal, compare prefixes
+		int prefixDiff = prefix - pn.prefix;
+		if (prefixDiff != 0)
+			return prefixDiff;
+		
+		//Area codes and prefixes are equal, compare line numbers
+		return lineNumber - pn.lineNumber;
+	}
 
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
