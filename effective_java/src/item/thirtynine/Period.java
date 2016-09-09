@@ -28,14 +28,19 @@ public final class Period {
 //		this.end = end;
 //	}
 	
-	
 	public Date start() {
-		return start;
+		return new Date(start.getTime());
 	}
+//	public Date start() {
+//		return start;
+//	}
 	
 	public Date end() {
-		return end;
+		return new Date(end.getTime());
 	}
+//	public Date end() {
+//		return end;
+//	}
 	
 
 }
