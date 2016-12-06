@@ -25,20 +25,43 @@ class Expr(object):
         """
         求函数对某个变量的偏导数值
         按照 forward mode求点point的对direction的偏导数值
-
+        From bottom to top
         :param point: 点
         :param direction: dict, 形如 {"x: 1, "y": 0},表示求函数对x的偏导数值
         :return:
         """
         cache = {}
         self._evaluation(point, cache)
-        return self._forward_ad(point, direction, cache)
+        return self._forward_ad(direction, cache)
 
-    def _forward_ad(self, point, direction, cache):
+    def _forward_ad(self, direction, cache):
         """
-        :param point:
         :param direction:
         :param cache: 存储子Expr在点point的值
+        :return:
+        """
+        raise NotImplementedError
+
+    def reverse_ad(self, point):
+        """
+        求函数的微分/梯度在点point的值
+        按照 reverse mode, From top to bottom
+        :param point:
+        :return:
+        """
+        cache = {}
+        self._evaluation(point, cache)
+        gradient = {key: 0 for key in point}
+        adjoint = 1
+        self._reverse_ad(gradient, adjoint, cache)
+
+        return gradient
+
+    def _reverse_ad(self, gradient, adjoint, cache):
+        """
+        :param gradient:
+        :param adjoint:
+        :param cache:
         :return:
         """
         raise NotImplementedError
@@ -71,16 +94,25 @@ class Constant(Expr, namedtuple("Constant", "value")):
 
         return cache[id(self)]
 
-    def _forward_ad(self, point, direction, cache):
+    def _forward_ad(self, direction, cache):
         """
         求Constant在点point对direction变量的偏导数值
-        :param point:
         :param direction: 形如 {"x": 1, "y": 0} 表示求x的偏导数值
         :param cache:
         :return:
         """
 
         return 0
+
+    def _reverse_ad(self, gradient, adjoint, cache):
+        """
+
+        :param gradient:
+        :param adjoint:
+        :param cache:
+        :return:
+        """
+
 
 class Variable(Expr, namedtuple("Variable", "name")):
     """
@@ -99,15 +131,25 @@ class Variable(Expr, namedtuple("Variable", "name")):
 
         return cache[id(self)]
 
-    def _forward_ad(self, point, direction, cache):
+    def _forward_ad(self, direction, cache):
         """
         求Variable在点point对direction变量的偏导数值
-        :param point:
         :param direction: 形如 {"x": 1, "y": 0} 表示求x的偏导数值
         :param cache:
         :return:
         """
         return direction[self.name]
+
+    def _reverse_ad(self, gradient, adjoint, cache):
+        """
+
+        :param gradient:
+        :param adjoint:
+        :param cache:
+        :return:
+        """
+        gradient[self.name] += adjoint
+
 
 class Add(Expr, namedtuple("Add", "expr1 expr2")):
     def _evaluation(self, point, cache):
@@ -124,20 +166,29 @@ class Add(Expr, namedtuple("Add", "expr1 expr2")):
 
         return cache[id(self)]
 
-    def _forward_ad(self, point, direction, cache):
+    def _forward_ad(self, direction, cache):
         """
         求 expr1 + expr2 在点point对direction变量的偏导数值
         d(expr1+expr2) = d(expr1) + d(expr2)
-        :param point: 形如 {"x": var1, "y": var2}, 表示点(var1, var2)
         :param direction: 形如 {"x": 1, "y": 0} 表示求x的偏导数值
         :param cache:
         :return:
         """
-        left = self.expr1._forward_ad(point, direction, cache)
-        right = self.expr2._forward_ad(point, direction, cache)
+        left = self.expr1._forward_ad(direction, cache)
+        right = self.expr2._forward_ad(direction, cache)
 
         return left + right
 
+    def _reverse_ad(self, gradient, adjoint, cache):
+        """
+
+        :param gradient:
+        :param adjoint:
+        :param cache:
+        :return:
+        """
+        self.expr1._reverse_ad(gradient, adjoint, cache)
+        self.expr2._reverse_ad(gradient, adjoint, cache)
 
 class Sub(Expr, namedtuple("Sub", "expr1 expr2")):
     def _evaluation(self, point, cache):
@@ -154,19 +205,29 @@ class Sub(Expr, namedtuple("Sub", "expr1 expr2")):
 
         return cache[id(self)]
 
-    def _forward_ad(self, point, direction, cache):
+    def _forward_ad(self, direction, cache):
         """
         求 expr1 - expr2 在点point对direction变量的偏导数值
         d(expr1-expr2) = d(expr1) - d(expr2)
-        :param point:
         :param direction:
         :param cache:
         :return:
         """
-        left = self.expr1._forward_ad(point, direction, cache)
-        right = self.expr2._forward_ad(point, direction, cache)
+        left = self.expr1._forward_ad(direction, cache)
+        right = self.expr2._forward_ad(direction, cache)
 
         return left - right
+
+    def _reverse_ad(self, gradient, adjoint, cache):
+        """
+
+        :param gradient:
+        :param adjoint:
+        :param cache:
+        :return:
+        """
+        self.expr1._reverse_ad(gradient, adjoint, cache)
+        self.expr2._reverse_ad(gradient, -adjoint, cache)
 
 
 class Mul(Expr, namedtuple("Mul", "expr1 expr2")):
@@ -184,19 +245,29 @@ class Mul(Expr, namedtuple("Mul", "expr1 expr2")):
 
         return cache[id(self)]
 
-    def _forward_ad(self, point, direction, cache):
+    def _forward_ad(self, direction, cache):
         """
         求 expr1 * expr2 在点point对direction变量的偏导数值
         d(expr1*expr2) = expr2 * d(expr1) + expr1 * d(expr2)
-        :param point:
         :param direction:
         :param cache:
         :return:
         """
-        left = self.expr1._forward_ad(point, direction, cache) * cache[id(self.expr2)]
-        right = self.expr2._forward_ad(point, direction, cache) * cache[id(self.expr1)]
+        left = self.expr1._forward_ad(direction, cache) * cache[id(self.expr2)]
+        right = self.expr2._forward_ad(direction, cache) * cache[id(self.expr1)]
 
         return left + right
+
+    def _reverse_ad(self, gradient, adjoint, cache):
+        """
+
+        :param gradient:
+        :param adjoint:
+        :param cache:
+        :return:
+        """
+        self.expr1._reverse_ad(gradient, adjoint * cache[id(self.expr2)], cache)
+        self.expr2._reverse_ad(gradient, adjoint * cache[id(self.expr1)], cache)
 
 class Div(Expr, namedtuple("Div", "expr1 expr2")):
     def _evaluation(self, point, cache):
@@ -212,19 +283,31 @@ class Div(Expr, namedtuple("Div", "expr1 expr2")):
 
         return cache[id(self)]
 
-    def _forward_ad(self, point, direction, cache):
+    def _forward_ad(self, direction, cache):
         """
         求 expr1 / expr2 在点point对direction变量的偏导数值
         d(expr1/expr2) = (d(expr1) * expr2 - expr1 * d(expr2))/(expr2 * expr2)
-        :param point:
         :param direction:
         :param cache:
         :return:
         """
-        top = self.expr1._forward_ad(point, direction, cache) * cache[id(self.expr2)] - cache[id(self.expr1)] * self.expr2._forward_ad(point, direction, cache)
+        top = self.expr1._forward_ad(direction, cache) * cache[id(self.expr2)] - cache[id(self.expr1)] * self.expr2._forward_ad(direction, cache)
         bottom = cache[id(self.expr2)] ** 2
 
         return  top / bottom
+
+    def _reverse_ad(self, gradient, adjoint, cache):
+        """
+        :param gradient:
+        :param adjoint:
+        :param cache:
+        :return:
+        """
+
+        self.expr1._reverse_ad(gradient, adjoint / cache[id(self.expr2)], cache)
+        self.expr2._reverse_ad(gradient, -adjoint * cache[id(self.expr1)] / cache[id(self.expr2)] ** 2, cache)
+
+
 
 
 
