@@ -1,33 +1,52 @@
 #-*- coding:utf-8 -*-
-from collections import namedtuple
-from numpy import random
 import myad
 
-Pearson = namedtuple("Pearson", "value name")
+def test_const_operation():
+    x = myad.Constant(3)
+    y = myad.Constant(2)
 
-Bob = Pearson(6, "Bob")
+    assert x.evaluation({}) == 3
+    assert y.evaluation({}) == 2
 
-# print(Bob.value)
-# print(Bob.name)
+    assert (x + y).evaluation({}) == 5
+    assert (x - y).evaluation({}) == 1
+    assert (x * y).evaluation({}) == 6
+    assert (x / y).evaluation({}) == 1.5
 
-x = myad.Constant(3)
-y = myad.Constant(2)
+    assert (x + x + y * y + x * y).evaluation({}) == 16
 
-# print((x + y).evaluation({}))
-# print((x * y).evaluation({}))
-# print((x + x + y + y + x).evaluation({}))
+test_const_operation()
+
+def test_variable_operation():
+    x = myad.Variable("x")
+    y = myad.Variable("y")
+
+    point = {"x": 3, "y": 2}
+
+    assert x.evaluation(point) == 3
+    assert y.evaluation(point) == 2
+
+    assert (x + y).evaluation(point) == 5
+    assert (x - y).evaluation(point) == 1
+    assert (x * y).evaluation(point) == 6
+    assert (x / y).evaluation(point) == 1.5
+
+    assert (x + x + y * y + x * y).evaluation(point) == 16
 
 
-var1 = myad.Variable("x")
-var2 = myad.Variable("y")
-point = {"x": 3, "y": 2}
+test_variable_operation()
 
-# print((var1 + var2).evaluation(point))
-# print((var1 * var2).evaluation(point))
-# print((var1 + var1 + var2 + var2 + var1 * var2).evaluation(point))
-# 求偏导数
-print((var1 + var2).forward_ad(point, {"x": 1, "y": 0}))
-print((var1 + var2).forward_ad(point, {"x": 0, "y": 1}))
-print((var1 * var2).forward_ad(point, {"x": 0, "y": 1}))
+def test_forward():
+    """
+    测试 forward mode求偏导数
+    :return:
+    """
 
-print((var1 * var2 * var1 + var2 * var2 - var2 + var1 / var2).forward_ad(point, {"x": 0, "y": 1}))
+    x = myad.Variable("x")
+    y = myad.Variable("y")
+    point = {"x": 3, "y": 2}
+
+    assert (x + y).forward_ad(point, {"x": 1, "y": 0}) == 1
+    assert (x + y).forward_ad(point, {"x": 0, "y": 1}) == 1
+    assert (x * y).forward_ad(point, {"x": 0, "y": 1}) == 3
+    assert (x * y * x + y * y - y + x / y).forward_ad(point, {"x": 0, "y": 1}) == 11.25
