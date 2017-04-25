@@ -23,6 +23,13 @@ class MyClass:
     def method7__(self):
         print("method7__()")
 
+    def _method8__(self):
+        print("_method8__()")
+
+    def __method9_(self):
+        print("__method9_()")
+
+
 if __name__=="__main__":
     cls = MyClass()
     cls.__init__()
@@ -33,3 +40,5 @@ if __name__=="__main__":
     cls.__method5__()
     cls.method6_()
     cls.method7__()
+    cls._method8__()
+    # cls.__method9_()
